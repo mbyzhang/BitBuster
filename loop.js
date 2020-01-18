@@ -1,16 +1,18 @@
 
-const maxNumNumbers = 50;
+const maxNumbers = 2000;
 const canvasHeight = 500;
 const canvasWidth = 500;
 
 const generalConstraints = {
-    minX: 0, 
-    minY: 0, 
+    minX: 0,
+    minY: 0,
     maxX: canvasWidth,
     maxY: canvasHeight
 };
 
-const inputMultiplier = 1.0;
+const inputMultiplier = 3.0;
+const moveMultiplier = 8.0;
+const captureRadius = 100.0;
 
 let numbers = [];
 // [n, x, y, dir_x, dir_y]
@@ -30,7 +32,7 @@ function generateDir(mode) {
     let yTwoDir = false;
     let yInverted = false;
 
-    switch (mode){
+    switch (mode) {
         case MODE_TOP:
             xTwoDir = true;
             break;
@@ -49,7 +51,7 @@ function generateDir(mode) {
 
     let dirX = Math.random();
     let dirY = Math.random();
-    
+
     if (xTwoDir) dirX = dirX * 2.0 - 1.0;
     if (yTwoDir) dirY = dirY * 2.0 - 1.0;
     if (xInverted) dirX *= -1.0;
@@ -69,10 +71,10 @@ function spawnNumber(constraints) {
     let x, y;
     if (mode <= 1) { // on top or bottom
         x = Math.random() * (constraints.maxX - constraints.minX) + constraints.minX;
-        y = (mode)? constraints.maxY : constraints.minY;
+        y = (mode) ? constraints.maxY : constraints.minY;
     }
     else {
-        x = (mode - 2)? constraints.maxX : constraints.minX;
+        x = (mode - 2) ? constraints.maxX : constraints.minX;
         y = Math.random() * (constraints.maxY - constraints.minY) + constraints.minY;
     }
     const dir = generateDir(mode);
@@ -112,11 +114,11 @@ function distanceBetween(x0, y0, x1, y1) {
     return Math.sqrt((x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1));
 }
 
-function getNumbersNotCollided(numbersPositions, boxes, threshold = 10.0, cbkCollided) {
+function getNumbersNotCollided(numbersPositions, boxes, threshold = 20.0, cbkCollided) {
     return numbersPositions.filter(number => {
         const n = number[0];
         const matchingBox = boxes[n];
-        
+
         if (cbkCollided != undefined) cbkCollided(number, matchingBox);
 
         return distanceBetween(number[1], number[2], matchingBox[0], matchingBox[1]) >= threshold;
@@ -133,12 +135,12 @@ function getFrame() {
 
     boxes = restrictBoxPosition(boxes, generalConstraints);
 
-    if (numbers.length < 20)
+    if (numbers.length < maxNumbers)
         numbers.push(spawnNumber(generalConstraints));
 
-    numbers = moveNumbers(numbers, generalConstraints, 1.0);
+    numbers = moveNumbers(numbers, generalConstraints, moveMultiplier);
 
-    numbers = getNumbersNotCollided(numbers, boxes, 10, (number, box) => {
+    numbers = getNumbersNotCollided(numbers, boxes, captureRadius, (number, box) => {
         //console.log(`Collision detected between number ${number} and box ${box}`);
     });
 
@@ -146,8 +148,114 @@ function getFrame() {
     window.requestAnimationFrame(getFrame);
 }
 
+initUserInput();
+
+let currentUserInput = [[0, 0], [0, 0]];
+
 function getUserInput() {
-    return [[0, 0], [0, 1]];
+    //let lastInput = [...currentUserInput];
+    //currentUserInput = [[0, 0], [0, 0]];
+    //return lastInput;
+    return currentUserInput;
+}
+
+function initUserInput() {
+    const keyMapping = [
+        {
+            key: 37,
+            box: 0,
+            move: [-1, 0]
+        },
+        {
+            key: 38,
+            box: 0,
+            move: [0, -1]
+        },
+        {
+            key: 39,
+            box: 0,
+            move: [1, 0]
+        },
+        {
+            key: 40,
+            box: 0,
+            move: [0, 1]
+        },
+
+        {
+            key: 65,
+            box: 1,
+            move: [-1, 0]
+        },
+        {
+            key: 87,
+            box: 1,
+            move: [0, -1]
+        },
+        {
+            key: 68,
+            box: 1,
+            move: [1, 0]
+        },
+        {
+            key: 83,
+            box: 1,
+            move: [0, 1]
+        }
+    ];
+
+    const allKeys = keyMapping.map(x => x.key);
+
+    let pressedKeys = {};
+
+    window.addEventListener("keydown", (e) => {
+        let keycode = window.event.keycode || e.which;
+
+        // 37 -> left
+        // 38 -> up
+        // 39 -> right
+        // 40 -> down
+        // 
+        // 65 -> left_e
+        // 87 -> up_w
+        // 68 -> right_d
+        // 83 -> down_s
+
+        if ((idx = allKeys.indexOf(keycode)) != -1) {
+            e.preventDefault();
+            pressedKeys[idx] = true;
+            processEventChange(idx, 0);
+        }
+    }, false);
+
+    window.addEventListener("keyup", (e) => {
+        let keycode = window.event.keycode || e.which;
+        if ((idx = allKeys.indexOf(keycode)) != -1) {
+            e.preventDefault();
+            pressedKeys[idx] = false;
+            processEventChange(idx, 1);
+            
+        }
+    }, false);
+
+    function processEventChange(idx, event) {
+        let map = keyMapping[idx];
+        if (event == 0) { // keydown
+            currentUserInput[map.box] = map.move;
+        }
+        else {
+            for (let [key, value] of Object.entries(pressedKeys)) {
+                tmap = keyMapping[key];
+                if (value && map.box == tmap.box) {
+                    currentUserInput[tmap.box] = tmap.move;
+                    return;
+                }
+            }
+
+            // no key pressed
+            currentUserInput[map.box] = [0, 0];
+        }
+    }
 }
 
 
@@ -170,7 +278,7 @@ function render(numbers, boxes) {
     boxes.forEach((val, idx) => {
         ctx.fillText("b" + idx, val[0], val[1]);
     })
-    
+
 
     // to be added
 }
