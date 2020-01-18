@@ -1,18 +1,17 @@
-
-const maxNumbers = 2000;
-const canvasHeight = 500;
-const canvasWidth = 500;
+const maxNumbers = 1;
+const canvasHeight = 1.0;
+const canvasWidth = 1.0;
 
 const generalConstraints = {
-    minX: 0,
-    minY: 0,
-    maxX: canvasWidth,
-    maxY: canvasHeight
+    minX: -canvasWidth/2,
+    minY: -canvasHeight/2,
+    maxX: canvasWidth/2,
+    maxY: canvasHeight/2
 };
 
-const inputMultiplier = 3.0;
-const moveMultiplier = 8.0;
-const captureRadius = 100.0;
+const inputMultiplier = 0.01;
+const moveMultiplier = 0.01;
+const captureRadius = 0.0;
 
 let numbers = [];
 // [n, x, y, dir_x, dir_y]
@@ -67,7 +66,11 @@ function generateDir(mode) {
 function spawnNumber(constraints) {
     const n = Math.round(Math.random());
 
-    const mode = Math.floor(Math.random() * 4.0);
+    let mode = Math.floor(Math.random() * 3.0);
+
+    // -- NO BOTTOM --
+    if (mode == MODE_BOTTOM) mode = MODE_RIGHT;
+    // -- NO BOTTOM --
     let x, y;
     if (mode <= 1) { // on top or bottom
         x = Math.random() * (constraints.maxX - constraints.minX) + constraints.minX;
@@ -75,14 +78,22 @@ function spawnNumber(constraints) {
     }
     else {
         x = (mode - 2) ? constraints.maxX : constraints.minX;
-        y = Math.random() * (constraints.maxY - constraints.minY) + constraints.minY;
+        y = Math.random() * (constraints.maxY - constraints.minY) + constraints.minY;   
     }
     const dir = generateDir(mode);
     return [n, x, y, dir[0], dir[1]];
 }
 
-function moveNumbers(numbersPositions, constraints, multiplier = 1.0, outOfConstraintCbk) {
-    return numbersPositions.map((num) => {
+function moveNumbers(numbersPositions, constraints, multiplier = 1.0, crossBottomCbk) {
+    // -- NO BOTTOM --
+    return numbersPositions.filter((num) => {
+        const [n, x, y, dirX, dirY] = num;
+        let newY = y + dirY * multiplier;
+        const result = newY <= constraints.maxY;
+        if (!result && crossBottomCbk != undefined) crossBottomCbk(num);
+        return result;
+    // -- NO BOTTOM --
+    }).map((num) => {
         const [n, x, y, dirX, dirY] = num;
         let newX = x + dirX * multiplier;
         let newY = y + dirY * multiplier;
@@ -138,17 +149,17 @@ function getFrame() {
     if (numbers.length < maxNumbers)
         numbers.push(spawnNumber(generalConstraints));
 
-    numbers = moveNumbers(numbers, generalConstraints, moveMultiplier);
+    numbers = moveNumbers(numbers, generalConstraints, moveMultiplier, (number) => {
+        console.log(`Number dropped out of the scene`);
+    });
 
     numbers = getNumbersNotCollided(numbers, boxes, captureRadius, (number, box) => {
         //console.log(`Collision detected between number ${number} and box ${box}`);
     });
 
-    render(numbers, boxes);
+    render([...numbers], boxes);
     window.requestAnimationFrame(getFrame);
 }
-
-initUserInput();
 
 let currentUserInput = [[0, 0], [0, 0]];
 
@@ -258,10 +269,11 @@ function initUserInput() {
     }
 }
 
-
+/*
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
 ctx.font = "12px Arial";
+
 
 function render(numbers, boxes) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -282,5 +294,13 @@ function render(numbers, boxes) {
 
     // to be added
 }
+*/
 
-window.requestAnimationFrame(getFrame);
+function main() {
+    initUserInput();
+    initGl();
+    
+    window.requestAnimationFrame(getFrame);
+}
+
+main();

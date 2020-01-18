@@ -8,3 +8,4 @@
 * High Power (Longer radius)
 * Clone to Matrix
 * Medicine
+* Firewall
