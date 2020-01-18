@@ -79,11 +79,11 @@ function spawnNumber(constraints) {
     return [n, x, y, dir[0], dir[1]];
 }
 
-function moveNumbers(numbersPositions, constraints, outOfConstraintCbk) {
+function moveNumbers(numbersPositions, constraints, multiplier = 1.0, outOfConstraintCbk) {
     return numbersPositions.map((num) => {
         const [n, x, y, dirX, dirY] = num;
-        let newX = x + dirX;
-        let newY = y + dirY;
+        let newX = x + dirX * multiplier;
+        let newY = y + dirY * multiplier;
         let newDirX = dirX;
         let newDirY = dirY;
         if (newX < constraints.minX || newX > constraints.maxX) {
@@ -133,10 +133,10 @@ function getFrame() {
 
     boxes = restrictBoxPosition(boxes, generalConstraints);
 
-    if (numbers.length < 100)
+    if (numbers.length < 20)
         numbers.push(spawnNumber(generalConstraints));
 
-    numbers = moveNumbers(numbers, generalConstraints);
+    numbers = moveNumbers(numbers, generalConstraints, 1.0);
 
     numbers = getNumbersNotCollided(numbers, boxes, 10, (number, box) => {
         //console.log(`Collision detected between number ${number} and box ${box}`);
@@ -156,7 +156,7 @@ var ctx = canvas.getContext("2d");
 ctx.font = "12px Arial";
 
 function render(numbers, boxes) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    //ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     //console.log("-----------------------------");
     //console.log(numbers);
