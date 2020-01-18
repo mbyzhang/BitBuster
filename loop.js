@@ -156,7 +156,7 @@ var ctx = canvas.getContext("2d");
 ctx.font = "12px Arial";
 
 function render(numbers, boxes) {
-    //ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     //console.log("-----------------------------");
     //console.log(numbers);
