@@ -1,12 +1,12 @@
 // Only continue if WebGL is available and working
-if (!gl) {
+/*if (!gl) {
     alert("Unable to initialize WebGL. Your browser or machine may not support it.");
     return;
-  }
+}*/
 
-   /*============= Creating a canvas ======================*/
-   var canvas = document.getElementById('my_Canvas');
-   gl = canvas.getContext('experimental-webgl');
+/*============= Creating a canvas ======================*/
+var canvas = document.getElementById('my_Canvas');
+gl = canvas.getContext('experimental-webgl');
 
    /*========== Defining and storing the geometry ==========*/
 
