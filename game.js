@@ -229,3 +229,11 @@ gl = canvas.getContext('webgl');
       window.requestAnimationFrame(animate);
    }
    animate(0);
+
+   [
+      [0, 100, 50], [1, 50, 20],
+   ]
+
+   [
+      [1, 2], [3, 4]
+   ]
