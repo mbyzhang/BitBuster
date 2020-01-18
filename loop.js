@@ -1,13 +1,16 @@
-const maxNumbers = 1;
-const canvasHeight = 1.0;
-const canvasWidth = 1.0;
+const maxNumbers = 10;
+const canvasHeight = 1.3;
+const canvasWidth = 1.3;
 
 const generalConstraints = {
-    minX: -canvasWidth/2,
-    minY: -canvasHeight/2,
-    maxX: canvasWidth/2,
-    maxY: canvasHeight/2
+    minX: -canvasWidth / 2,
+    minY: -canvasHeight / 2,
+    maxX: canvasWidth / 2,
+    maxY: canvasHeight / 2
 };
+
+const offsetX = -0.05;
+const offsetY = 0.05;
 
 const inputMultiplier = 0.01;
 const moveMultiplier = 0.01;
@@ -100,11 +103,11 @@ function moveNumbers(numbersPositions, constraints, multiplier = 1.0, crossBotto
         let newDirX = dirX;
         let newDirY = dirY;
         if (newX < constraints.minX || newX > constraints.maxX) {
-            newX -= dirX;
+            newX = x;
             newDirX = -newDirX;
         }
         if (newY < constraints.minY || newY > constraints.maxY) {
-            newY -= dirY;
+            newY = y;
             newDirY = -newDirY;
         }
         return [n, newX, newY, newDirX, newDirY];
@@ -157,7 +160,8 @@ function getFrame() {
         //console.log(`Collision detected between number ${number} and box ${box}`);
     });
 
-    render([...numbers], boxes);
+    //console.log(numbers);
+    render(numbers.map(num => [num[0], num[1] + offsetX, num[2] + offsetY]), boxes);
     window.requestAnimationFrame(getFrame);
 }
 
