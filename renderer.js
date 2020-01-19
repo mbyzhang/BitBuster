@@ -508,8 +508,8 @@ function initGl() {
     };
 
     tex = [];
-    tex[0] = loadTexture(gl, 'icons/0.png');
-    tex[1] = loadTexture(gl, 'icons/1.png');
+    tex[0] = loadTexture(gl, 'icons/numbers/zero_2.png');
+    tex[1] = loadTexture(gl, 'icons/numbers/one_2s.png');
     tex[2] = loadTexture(gl, 'icons/slow.png');
     tex[3] = loadTexture(gl, 'icons/thunder.png');
     tex[4] = loadTexture(gl, 'icons/snow.png');
