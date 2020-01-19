@@ -1,4 +1,27 @@
 const maxNumbers = 10;
+
+
+const canvasHeight = 500;
+const canvasWidth = 500;
+
+const generalConstraints = {
+    minX: 0,
+    minY: 0,
+    maxX: canvasHeight,
+    maxY: canvasWidth
+};
+
+const offsetX = 0;
+const offsetY = 0;
+
+const defaultInputMultiplier = 2.0;
+const defaultMoveMultiplier = 1.0;
+const defaultCaptureRadius = 10.0;
+const defaultBoxes = [[100, 100], [100, 200]];
+const fullHp = 200;
+
+
+/* 
 const canvasHeight = 1.3;
 const canvasWidth = 1.3;
 
@@ -13,15 +36,32 @@ const offsetX = -0.05;
 const offsetY = 0.05;
 
 const inputMultiplier = 0.01;
-const moveMultiplier = 0.01;
-const captureRadius = 0.0;
+const defaultMoveMultiplier = 0.01;
+const defaultCaptureRadius = 0.01;
+
+ */
+
+let hp;
+let gameOver = false;
+let inputMultiplier;
+let moveMultiplier;
+let captureRadius;
 
 let numbers = [];
 // [n, x, y, dir_x, dir_y]
 
-let boxes = [[0, 0], [0, 0]];
+let powerups = {
+    slow: undefined, // slow numbers
+    boost: undefined, // boost boxes
+    freeze: undefined, // freeze numbers
+    clear: undefined, // clear all numbers in the scene
+    largerRadius: undefined,
+    medicine: undefined // increase HP
+}
 
-let gameScore = 0;
+let boxes;
+
+let score = 0;
 
 const MODE_TOP = 0;
 const MODE_BOTTOM = 1;
@@ -67,7 +107,17 @@ function generateDir(mode) {
 }
 
 function spawnNumber(constraints) {
-    const n = Math.round(Math.random());
+    const cumulatieveProbs = [0.35, 0.7, 0.75, 0.8, 0.85, 0.875, 0.925, 1.0];
+    //                        0     1    S     B    F     C      R+     M
+
+    let n = 0;
+    const r = Math.random();
+    for (let i = 0; i < cumulatieveProbs.length; ++i) {
+        if (cumulatieveProbs[i] > r) {
+            n = i;
+            break;
+        }
+    }
 
     let mode = Math.floor(Math.random() * 3.0);
 
@@ -81,7 +131,7 @@ function spawnNumber(constraints) {
     }
     else {
         x = (mode - 2) ? constraints.maxX : constraints.minX;
-        y = Math.random() * (constraints.maxY - constraints.minY) + constraints.minY;   
+        y = Math.random() * (constraints.maxY - constraints.minY) + constraints.minY;
     }
     const dir = generateDir(mode);
     return [n, x, y, dir[0], dir[1]];
@@ -95,7 +145,7 @@ function moveNumbers(numbersPositions, constraints, multiplier = 1.0, crossBotto
         const result = newY <= constraints.maxY;
         if (!result && crossBottomCbk != undefined) crossBottomCbk(num);
         return result;
-    // -- NO BOTTOM --
+        // -- NO BOTTOM --
     }).map((num) => {
         const [n, x, y, dirX, dirY] = num;
         let newX = x + dirX * multiplier;
@@ -131,46 +181,148 @@ function distanceBetween(x0, y0, x1, y1) {
 function getNumbersNotCollided(numbersPositions, boxes, threshold = 20.0, cbkCollided) {
     return numbersPositions.filter(number => {
         const n = number[0];
-        const matchingBox = boxes[n];
+        let matchingBoxes;
+        if (n >= 2) {
+            matchingBoxes = [boxes[0], boxes[1]];
+        } else {
+            matchingBoxes = [boxes[n]];
+        }
 
-        if (cbkCollided != undefined) cbkCollided(number, matchingBox);
+        let result = true;
 
-        return distanceBetween(number[1], number[2], matchingBox[0], matchingBox[1]) >= threshold;
+        for (box of matchingBoxes) {
+            if (distanceBetween(number[1], number[2], box[0], box[1]) < threshold) {
+                result = false;
+                break;
+            }
+        }
+
+        if (!result && cbkCollided != undefined) cbkCollided(number, matchingBoxes);
+
+        return result;
     });
 }
 
-function getFrame() {
-    let userInput = getUserInput(); // [ [ 0, 0 ], [0, 0] ]
+function updateHp(offset) {
+    hp += offset;
+    hp = Math.min(fullHp, Math.max(0, hp));
+    console.log(`HP ${offset} -> ${hp}`);
+    if (hp == 0) {
+        gameOver = true;
+        console.log("Game Over!");
+    }
+}
 
-    boxesPositionIndices.forEach(i => {
-        let [a, b] = i;
-        boxes[a][b] += userInput[a][b] * inputMultiplier;
-    })
+function updateScore(offset) {
+    if (offset == undefined) score = 0;
+    else score += offset;
+    console.log(`Score -> ${score}`);
+    return score;
+}
 
-    boxes = restrictBoxPosition(boxes, generalConstraints);
+function getFrame(t) {
+    if (!gameOver) {
+        const userInput = getUserInput(); // [ [ 0, 0 ], [0, 0] ]
+        const timeMultiplier = Math.min(3.0, Math.max(1.0, t / 600000.0));
 
-    if (numbers.length < maxNumbers)
-        numbers.push(spawnNumber(generalConstraints));
+        boxesPositionIndices.forEach(i => {
+            let [a, b] = i;
+            boxes[a][b] += userInput[a][b] * inputMultiplier * timeMultiplier;
+        })
 
-    numbers = moveNumbers(numbers, generalConstraints, moveMultiplier, (number) => {
-        console.log(`Number dropped out of the scene`);
-    });
+        boxes = restrictBoxPosition(boxes, generalConstraints);
 
-    numbers = getNumbersNotCollided(numbers, boxes, captureRadius, (number, box) => {
-        //console.log(`Collision detected between number ${number} and box ${box}`);
-    });
+        if (numbers.length < maxNumbers)
+            numbers.push(spawnNumber(generalConstraints));
+
+        numbers = moveNumbers(numbers, generalConstraints, moveMultiplier * timeMultiplier, (number) => {
+            if (number[0] >= 2) return;
+            updateHp(-5);
+            console.log(`Number dropped out of the scene`);
+        });
+
+        let clearNumbers = false;
+        numbers = getNumbersNotCollided(numbers, boxes, captureRadius, (number, box) => {
+            const type = number[0];
+
+            let clearPowerup = (handler) => {
+                if (handler != undefined) clearTimeout(handler);
+            };
+
+            const powerupDuration = 5000.0;
+
+            switch (type) {
+                case 0:
+                case 1:
+                    updateHp(1);
+                    updateScore(10);
+                    break;
+                case 2: // slow
+                    console.log("SLOW activated!");
+                    clearPowerup(powerups.slow);
+                    clearPowerup(powerups.freeze);
+                    powerups.freeze = undefined;
+                    moveMultiplier = defaultMoveMultiplier * 0.5;
+                    powerups.slow = setTimeout(() => {
+                        moveMultiplier = defaultMoveMultiplier;
+                        powerups.slow = undefined;
+                        console.log("SLOW deactivated!");
+                    }, powerupDuration);
+                    break;
+                case 3: // boost
+                    console.log("BOOST activated");
+                    clearPowerup(powerups.boost);
+                    inputMultiplier = defaultInputMultiplier * 4.0;
+                    powerups.boost = setTimeout(() => {
+                        inputMultiplier = defaultInputMultiplier;
+                        powerups.boost = undefined;
+                        console.log("BOOST deactivated");
+                    }, powerupDuration);
+                    break;
+                case 4: // freeze
+                    console.log("FREEZE activated!");
+                    clearPowerup(powerups.freeze);
+                    clearPowerup(powerups.slow);
+                    powerups.slow = undefined;
+                    moveMultiplier = 0.0;
+                    powerups.freeze = setTimeout(() => {
+                        moveMultiplier = defaultMoveMultiplier;
+                        powerups.freeze = undefined;
+                        console.log("FREEZE deactivated!");
+                    }, powerupDuration);
+                    break;
+                case 5: // clear
+                    console.log("CLEAR activated!");
+                    clearNumbers = true;
+                    break;
+                case 6: // largerRadius
+                    console.log("RADIUS+ activated!");
+                    clearPowerup(powerups.largerRadius);
+                    captureRadius = defaultCaptureRadius * 4.0;
+                    powerups.largerRadius = setTimeout(() => {
+                        captureRadius = defaultCaptureRadius;
+                        powerups.largerRadius = undefined;
+                        console.log("RADIUS+ deactivated!");
+                    }, powerupDuration);
+                    break;
+                case 7: // medicine
+                    updateHp(20);
+                    break;
+            }
+            //console.log(`Collision detected between number ${number} and box ${box}`);
+        });
+
+        if (clearNumbers) numbers = [];
+    }
 
     //console.log(numbers);
-    render(numbers.map(num => [num[0], num[1] + offsetX, num[2] + offsetY]), boxes);
+    render(numbers.map(num => [num[0], num[1] + offsetX, num[2] + offsetY]), boxes, hp, score, gameOver);
     window.requestAnimationFrame(getFrame);
 }
 
 let currentUserInput = [[0, 0], [0, 0]];
 
 function getUserInput() {
-    //let lastInput = [...currentUserInput];
-    //currentUserInput = [[0, 0], [0, 0]];
-    //return lastInput;
     return currentUserInput;
 }
 
@@ -249,9 +401,14 @@ function initUserInput() {
             e.preventDefault();
             pressedKeys[idx] = false;
             processEventChange(idx, 1);
-            
         }
     }, false);
+
+    window.addEventListener("click", (e) => {
+        if (gameOver) {
+            initGameState();
+        }
+    })
 
     function processEventChange(idx, event) {
         let map = keyMapping[idx];
@@ -273,37 +430,67 @@ function initUserInput() {
     }
 }
 
-/*
-var canvas = document.getElementById("myCanvas");
-var ctx = canvas.getContext("2d");
-ctx.font = "12px Arial";
+function getPrettyNumberName(n) {
+    return ["0", "1", "S", "B", "F", "C", "R+", "M", "UNDEF", "UNDEF"][n];
+}
 
+var canvas, ctx;
 
-function render(numbers, boxes) {
+const textureLookup = ["icons/0.png", "icons/1.png", "icons/slow.png", "icons/thunder.png", "icons/snow.png", "icons/bomb.png", "icons/strong.png", "icons/pill.png"];
+
+let textureImages = [];
+
+function initCanvas() {
+    canvas = document.getElementById("glcanvas");
+    ctx = canvas.getContext("2d");
+    ctx.font = "12px Arial";
+    textureLookup.forEach(url => {
+        let img = new Image;
+        img.src = url;
+        textureImages.push(img);
+    });
+}
+
+function render(numbers, boxes, hp, score, gameOver = false) {
+    const hpPos = [20, 20];
+    const scorePos = [canvasWidth - 70, 20];
+    const gameOverPos = [canvasWidth / 2, canvasHeight / 2];
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    //console.log("-----------------------------");
-    //console.log(numbers);
-    //console.log(boxes);
-
-
     numbers.forEach(i => {
-        ctx.fillText(i[0], i[1], i[2]);
+        ctx.drawImage(textureImages[i[0]], i[1], i[2], 16, 16);
+        //ctx.fillText(getPrettyNumberName(i[0]), i[1], i[2]);
     });
 
     boxes.forEach((val, idx) => {
         ctx.fillText("b" + idx, val[0], val[1]);
-    })
+    });
 
+    ctx.fillText(`HP: ${hp}`, hpPos[0], hpPos[1]);
+    ctx.fillText(`Score: ${score}`, scorePos[0], scorePos[1]);
 
-    // to be added
+    if (gameOver) ctx.fillText("Game Over!\nClick to Restart", gameOverPos[0], gameOverPos[1]);
+
 }
-*/
+
+function initGameState() {
+    numbers = [];
+    boxes = defaultBoxes;
+    hp = fullHp / 2;
+    score = 0;
+    inputMultiplier = defaultInputMultiplier;
+    moveMultiplier = defaultMoveMultiplier;
+    captureRadius = defaultCaptureRadius;
+    gameOver = false;
+}
 
 function main() {
     initUserInput();
-    initGl();
-    
+    initCanvas();
+    initGameState();
+    //initGl();
+
     window.requestAnimationFrame(getFrame);
 }
 
