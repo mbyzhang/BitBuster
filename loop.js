@@ -20,8 +20,8 @@ const defaultCaptureRadius = 10.0;
 */
 
  
-const canvasHeight = 1.3;
-const canvasWidth = 1.3;
+const canvasHeight = 1.4;
+const canvasWidth = 1.4;
 
 const generalConstraints = {
     minX: -canvasWidth / 2,
@@ -34,6 +34,9 @@ const size = 0.05
 const psize = 0.1
 const offsetX = -size/2;
 const offsetY = size/2;
+
+const pOffsetX = -psize/2;
+const pOffsetY = psize/2;
 
 const defaultInputMultiplier = 0.01;
 const defaultMoveMultiplier = 0.005;
@@ -274,7 +277,7 @@ function getFrame(t) {
                 case 3: // boost
                     console.log("BOOST activated");
                     clearPowerup(powerups.boost);
-                    inputMultiplier = defaultInputMultiplier * 4.0;
+                    inputMultiplier = defaultInputMultiplier * 1.5;
                     powerups.boost = setTimeout(() => {
                         inputMultiplier = defaultInputMultiplier;
                         powerups.boost = undefined;
@@ -318,7 +321,7 @@ function getFrame(t) {
     }
 
     //console.log(numbers);
-    render(numbers.map(num => [num[0], num[1] + offsetX, num[2] + offsetY]), boxes, hp, score, gameOver, size, psize);
+    render(numbers.map(num => [num[0], num[1] + offsetX, num[2] + offsetY]), boxes.map(num => [num[0] + pOffsetX, num[1] + pOffsetY]), hp, score, gameOver, size, psize);
     window.requestAnimationFrame(getFrame);
 }
 

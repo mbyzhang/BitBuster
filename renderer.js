@@ -536,4 +536,16 @@ function render(numbers, boxes, hp, score, gameOver, size, psize) {
     ctx.fillText(`Score: ${score}`, scorePos[0], scorePos[1]);
     if (gameOver) ctx.fillText("Game Over!\nClick to Restart", gameOverPos[0], gameOverPos[1]);
 
+    ctx.beginPath();
+    ctx.moveTo(0, 499);
+    ctx.lineTo(500, 499);
+    ctx.strokeStyle = "red";
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(1, 500);
+    ctx.lineTo(1, 1);
+    ctx.lineTo(499,1);
+    ctx.lineTo(499,500);
+    ctx.strokeStyle = "blue";
+    ctx.stroke();
 }
