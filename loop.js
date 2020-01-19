@@ -36,8 +36,8 @@ const offsetX = -size/2;
 const offsetY = size/2;
 
 const defaultInputMultiplier = 0.01;
-const defaultMoveMultiplier = 0.01;
-const defaultCaptureRadius = psize/2;
+const defaultMoveMultiplier = 0.005;
+const defaultCaptureRadius = psize * 0.7;
 const defaultBoxes = [[0, -psize], [0, psize]];
 
 
