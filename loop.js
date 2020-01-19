@@ -1,6 +1,6 @@
 const maxNumbers = 10;
 
-
+/*
 const canvasHeight = 500;
 const canvasWidth = 500;
 
@@ -17,11 +17,9 @@ const offsetY = 0;
 const defaultInputMultiplier = 2.0;
 const defaultMoveMultiplier = 1.0;
 const defaultCaptureRadius = 10.0;
-const defaultBoxes = [[100, 100], [100, 200]];
-const fullHp = 200;
+*/
 
-
-/* 
+ 
 const canvasHeight = 1.3;
 const canvasWidth = 1.3;
 
@@ -35,11 +33,13 @@ const generalConstraints = {
 const offsetX = -0.05;
 const offsetY = 0.05;
 
-const inputMultiplier = 0.01;
+const defaultInputMultiplier = 0.01;
 const defaultMoveMultiplier = 0.01;
 const defaultCaptureRadius = 0.01;
+const defaultBoxes = [[0, -0.05], [0, 0.05]];
 
- */
+
+const fullHp = 200;
 
 let hp;
 let gameOver = false;
@@ -434,6 +434,7 @@ function getPrettyNumberName(n) {
     return ["0", "1", "S", "B", "F", "C", "R+", "M", "UNDEF", "UNDEF"][n];
 }
 
+/*
 var canvas, ctx;
 
 const textureLookup = ["icons/0.png", "icons/1.png", "icons/slow.png", "icons/thunder.png", "icons/snow.png", "icons/bomb.png", "icons/strong.png", "icons/pill.png"];
@@ -473,6 +474,7 @@ function render(numbers, boxes, hp, score, gameOver = false) {
     if (gameOver) ctx.fillText("Game Over!\nClick to Restart", gameOverPos[0], gameOverPos[1]);
 
 }
+*/
 
 function initGameState() {
     numbers = [];
@@ -487,9 +489,9 @@ function initGameState() {
 
 function main() {
     initUserInput();
-    initCanvas();
+    //initCanvas();
     initGameState();
-    //initGl();
+    initGl();
 
     window.requestAnimationFrame(getFrame);
 }

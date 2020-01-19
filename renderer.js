@@ -60,8 +60,9 @@ function initBuffers(gl, numbers) {
     zz = 1.0;
     size = 0.1;
 
-    var positions = []
-    for (i = 0; i < numbers.length; i++) {
+    NBox = numbers.length;
+    var positions = [];//new Array(12*numbers.length);
+    for (i = 0; i < NBox; i++) {
         k = i * 12;
         x = numbers[i][1];
         y = numbers[i][2];
@@ -85,8 +86,8 @@ function initBuffers(gl, numbers) {
     const textureCoordBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
 
-    var texturec = []
-    for (i = 0; i < numbers.length; i++) {
+    var texturec = [];//new Array(8*numbers.length);
+    for (i = 0; i < NBox; i++) {
         k = i * 8;
         texturec[k] = 0.0;
         texturec[k + 1] = 0.0;
@@ -101,26 +102,38 @@ function initBuffers(gl, numbers) {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texturec),
         gl.STATIC_DRAW);
 
+
+    // texind
+    const texindBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, texindBuffer);
+
+    var texindices = [];//new Array(4*numbers.length);
+    for (i = 0; i < NBox; i++) {
+        k = i * 4;
+        texindices[k] = numbers[i][0];
+        texindices[k + 1] = numbers[i][0];
+        texindices[k + 2] = numbers[i][0];
+        texindices[k + 3] = numbers[i][0];   
+    }
+
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texindices), gl.STATIC_DRAW);
+    
     // Build the element array buffer; this specifies the indices
     // into the vertex arrays for each face's vertices.
 
     const indexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 
-    // This array defines each face as two triangles, using the
-    // indices into the vertex array to specify each triangle's
-    // position.
-
-    var indices = []
-    for (i = 0; i < numbers.length; i++) {
+    var indices = [];
+    for (i = 0; i < NBox; i++) {
         k = i * 6;
-        g = 4 * i
-        indices[k] = g
-        indices[k + 1] = g + 1
-        indices[k + 2] = g + 2
-        indices[k + 3] = g
-        indices[k + 4] = g + 2
-        indices[k + 5] = g + 3
+        g = 4 * i;
+        indices[k] = g;
+        indices[k + 1] = g + 1;
+        indices[k + 2] = g + 2;
+        indices[k + 3] = g;
+        indices[k + 4] = g + 2;
+        indices[k + 5] = g + 3;
     }
 
     // Now send the element array to GL
@@ -130,6 +143,7 @@ function initBuffers(gl, numbers) {
     return {
         position: positionBuffer,
         textureCoord: textureCoordBuffer,
+        textureIndex: texindBuffer,
         indices: indexBuffer,
     };
 }
@@ -213,7 +227,7 @@ function initShaderProgram(gl, vsSource, fsSource) {
     return shaderProgram;
 }
 
-function drawScene(gl, programInfo, buffers, texture, numbers) {
+function drawScene(gl, programInfo, buffers, tex, numbers) {
 
     gl.clearColor(0.9, 0.9, 0.9, 1.0);  // Clear to black, fully opaque
     gl.clearDepth(1.0);                 // Clear everything
@@ -287,11 +301,24 @@ function drawScene(gl, programInfo, buffers, texture, numbers) {
             programInfo.attribLocations.textureCoord);
     }
 
+    // texindex buffers
+    //console.log(buffers.texIndex.length)
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.textureIndex);
+    gl.vertexAttribPointer(
+        programInfo.attribLocations.textureIndex,
+        1,
+        gl.FLOAT,
+        false,
+        0,
+        0);
+    gl.enableVertexAttribArray(
+        programInfo.attribLocations.textureIndex);
+    
     // Tell WebGL which indices to use to index the vertices
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
+    
 
     // Tell WebGL to use our program when drawing
-
     gl.useProgram(programInfo.program);
 
     // Set the shader uniforms
@@ -303,23 +330,20 @@ function drawScene(gl, programInfo, buffers, texture, numbers) {
     // Tell WebGL we want to affect texture unit 0
     gl.activeTexture(gl.TEXTURE0);
     // Bind the texture to texture unit 0
-    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.bindTexture(gl.TEXTURE_2D, tex[0]);
     // Tell the shader we bound the texture to texture unit 0
-    gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
+    gl.uniform1i(programInfo.uniformLocations.tex0, 0);
 
-    /*gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.uniform1i(programInfo.uniformLocations.uSampler, 1);*/
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, tex[1]);
+    gl.uniform1i(programInfo.uniformLocations.tex1, 1);
 
-    {
-        //console.log(numbers[0][1]);
-        const offset = 0;
-        gl.drawElements(gl.TRIANGLES, numbers.length * 6, gl.UNSIGNED_SHORT, offset);
-    }
+    const offset = 0;
+    gl.drawElements(gl.TRIANGLES, numbers.length * 6, gl.UNSIGNED_SHORT, offset);
 
 }
 
-let canvas, gl, programInfo, texture;
+let canvas, gl, programInfo, buffers;
 
 function initGl() {
     canvas = document.getElementById('glcanvas');
@@ -332,19 +356,32 @@ function initGl() {
     const vertCode = `
       attribute vec4 aVertexPosition;
       attribute vec2 aTextureCoord;
+      attribute float atexIndex;
+      
       uniform mat4 uModelViewMatrix;
       uniform mat4 uProjectionMatrix;
       varying highp vec2 vTextureCoord;
+      varying lowp float vTexIndex;
+
       void main(void) {
         gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
         vTextureCoord = aTextureCoord;
+        vTexIndex = atexIndex;
       }`;
 
     const fragCode = `
       varying highp vec2 vTextureCoord;
-      uniform sampler2D uSampler;
+      varying lowp float vTexIndex;
+
+      uniform sampler2D tex0;
+      uniform sampler2D tex1;
+
       void main(void) {
-        gl_FragColor = texture2D(uSampler, vTextureCoord);
+        if (vTexIndex == 0.0) {
+          gl_FragColor = texture2D(tex0, vTextureCoord);
+        } else if (vTexIndex == 1.0) {
+            gl_FragColor = texture2D(tex1, vTextureCoord);
+        }
       }`;
 
     const shaderProgram = initShaderProgram(gl, vertCode, fragCode);
@@ -354,18 +391,25 @@ function initGl() {
         attribLocations: {
             vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
             textureCoord: gl.getAttribLocation(shaderProgram, 'aTextureCoord'),
+            textureIndex: gl.getAttribLocation(shaderProgram, 'atexIndex'),
         },
         uniformLocations: {
             projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
             modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
-            uSampler: gl.getUniformLocation(shaderProgram, 'uSampler'),
+            tex0: gl.getUniformLocation(shaderProgram, 'tex0'),
+            tex1: gl.getUniformLocation(shaderProgram, 'tex1'),
         },
     };
 
-    texture = loadTexture(gl, '1.png');//'cubetexture.png');
+    tex = [];
+    tex[0] = loadTexture(gl, 'icons/numbers/zero_0.png');//'cubetexture.png');'
+    tex[1] = loadTexture(gl, 'icons/numbers/one_1.png');//'cubetexture.png');
+
+    //console.log()
 }
 
 function render(numbers, boxes) {
-    var buffers = initBuffers(gl, numbers);
-    drawScene(gl, programInfo, buffers, texture, numbers);
+
+    buffers = initBuffers(gl, numbers); // Vertices etc.
+    drawScene(gl, programInfo, buffers, tex, numbers);
 }
