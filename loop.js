@@ -434,9 +434,22 @@ function getPrettyNumberName(n) {
     return ["0", "1", "S", "B", "F", "C", "R+", "M", "UNDEF", "UNDEF"][n];
 }
 
-var canvas = document.getElementById("glcanvas");
-var ctx = canvas.getContext("2d");
-ctx.font = "12px Arial";
+var canvas, ctx;
+
+const textureLookup = ["icons/0.png", "icons/1.png", "icons/slow.png", "icons/thunder.png", "icons/snow.png", "icons/bomb.png", "icons/strong.png", "icons/pill.png"];
+
+let textureImages = [];
+
+function initCanvas() {
+    canvas = document.getElementById("glcanvas");
+    ctx = canvas.getContext("2d");
+    ctx.font = "12px Arial";
+    textureLookup.forEach(url => {
+        let img = new Image;
+        img.src = url;
+        textureImages.push(img);
+    });
+}
 
 function render(numbers, boxes, hp, score, gameOver = false) {
     const hpPos = [20, 20];
@@ -446,7 +459,8 @@ function render(numbers, boxes, hp, score, gameOver = false) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     numbers.forEach(i => {
-        ctx.fillText(getPrettyNumberName(i[0]), i[1], i[2]);
+        ctx.drawImage(textureImages[i[0]], i[1], i[2], 16, 16);
+        //ctx.fillText(getPrettyNumberName(i[0]), i[1], i[2]);
     });
 
     boxes.forEach((val, idx) => {
@@ -473,6 +487,7 @@ function initGameState() {
 
 function main() {
     initUserInput();
+    initCanvas();
     initGameState();
     //initGl();
 
