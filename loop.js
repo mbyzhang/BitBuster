@@ -30,13 +30,15 @@ const generalConstraints = {
     maxY: canvasHeight / 2
 };
 
-const offsetX = -0.05;
-const offsetY = 0.05;
+const size = 0.05
+const psize = 0.1
+const offsetX = -size/2;
+const offsetY = size/2;
 
 const defaultInputMultiplier = 0.01;
 const defaultMoveMultiplier = 0.01;
-const defaultCaptureRadius = 0.01;
-const defaultBoxes = [[0, -0.05], [0, 0.05]];
+const defaultCaptureRadius = psize/2;
+const defaultBoxes = [[0, -psize], [0, psize]];
 
 
 const fullHp = 200;
@@ -316,7 +318,7 @@ function getFrame(t) {
     }
 
     //console.log(numbers);
-    render(numbers.map(num => [num[0], num[1] + offsetX, num[2] + offsetY]), boxes, hp, score, gameOver);
+    render(numbers.map(num => [num[0], num[1] + offsetX, num[2] + offsetY]), boxes, hp, score, gameOver, size, psize);
     window.requestAnimationFrame(getFrame);
 }
 

@@ -50,7 +50,7 @@ function get_projection(angle, a, zMin, zMax) {
     ];
 }
 
-function initBuffers(gl, numbers) {
+function initBuffers(gl, numbers, boxes, size, psize) {
 
     // Create a buffer for the cube's vertex positions
     const positionBuffer = gl.createBuffer();
@@ -58,7 +58,6 @@ function initBuffers(gl, numbers) {
 
     // Now create an array of positions for the cube
     zz = 1.0;
-    size = 0.1;
 
     NBox = numbers.length;
     var positions = [];//new Array(12*numbers.length);
@@ -80,6 +79,35 @@ function initBuffers(gl, numbers) {
         positions[k + 11] = zz
     }
 
+    x = boxes[0][0];
+    y = boxes[0][1];
+    positions[NBox * 12] = x;
+    positions[NBox * 12 + 1] = y - psize;
+    positions[NBox * 12 + 2] = zz
+    positions[NBox * 12 + 3] = x + psize;
+    positions[NBox * 12 + 4] = y - psize;
+    positions[NBox * 12 + 5] = zz
+    positions[NBox * 12 + 6] = x + psize;
+    positions[NBox * 12 + 7] = y;
+    positions[NBox * 12 + 8] = zz
+    positions[NBox * 12 + 9] = x;
+    positions[NBox * 12 + 10] = y;
+    positions[NBox * 12 + 11] = zz
+    x = boxes[1][0];
+    y = boxes[1][1];
+    positions[NBox * 12 + 12] = x;
+    positions[NBox * 12 + 13] = y - psize;
+    positions[NBox * 12 + 14] = zz
+    positions[NBox * 12 + 15] = x + psize;
+    positions[NBox * 12 + 16] = y - psize;
+    positions[NBox * 12 + 17] = zz
+    positions[NBox * 12 + 18] = x + psize;
+    positions[NBox * 12 + 19] = y;
+    positions[NBox * 12 + 20] = zz
+    positions[NBox * 12 + 21] = x;
+    positions[NBox * 12 + 22] = y;
+    positions[NBox * 12 + 23] = zz
+
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
     // Now set up the texture coordinates for the faces.
@@ -87,7 +115,7 @@ function initBuffers(gl, numbers) {
     gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
 
     var texturec = [];//new Array(8*numbers.length);
-    for (i = 0; i < NBox; i++) {
+    for (i = 0; i < NBox + 2; i++) {
         k = i * 8;
         texturec[k] = 0.0;
         texturec[k + 1] = 0.0;
@@ -113,11 +141,22 @@ function initBuffers(gl, numbers) {
         texindices[k] = numbers[i][0];
         texindices[k + 1] = numbers[i][0];
         texindices[k + 2] = numbers[i][0];
-        texindices[k + 3] = numbers[i][0];   
+        texindices[k + 3] = numbers[i][0];
     }
 
+    k = NBox * 4;
+    texindices[k] = 8.0;
+    texindices[k + 1] = 8.0;
+    texindices[k + 2] = 8.0;
+    texindices[k + 3] = 8.0;
+    k = (NBox + 1) * 4;
+    texindices[k] = 9.0;
+    texindices[k + 1] = 9.0;
+    texindices[k + 2] = 9.0;
+    texindices[k + 3] = 9.0;
+
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texindices), gl.STATIC_DRAW);
-    
+
     // Build the element array buffer; this specifies the indices
     // into the vertex arrays for each face's vertices.
 
@@ -125,7 +164,7 @@ function initBuffers(gl, numbers) {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 
     var indices = [];
-    for (i = 0; i < NBox; i++) {
+    for (i = 0; i < NBox + 2; i++) {
         k = i * 6;
         g = 4 * i;
         indices[k] = g;
@@ -313,10 +352,10 @@ function drawScene(gl, programInfo, buffers, tex, numbers) {
         0);
     gl.enableVertexAttribArray(
         programInfo.attribLocations.textureIndex);
-    
+
     // Tell WebGL which indices to use to index the vertices
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
-    
+
 
     // Tell WebGL to use our program when drawing
     gl.useProgram(programInfo.program);
@@ -337,17 +376,44 @@ function drawScene(gl, programInfo, buffers, tex, numbers) {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, tex[1]);
     gl.uniform1i(programInfo.uniformLocations.tex1, 1);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, tex[2]);
+    gl.uniform1i(programInfo.uniformLocations.tex2, 2);
+    gl.activeTexture(gl.TEXTURE3);
+    gl.bindTexture(gl.TEXTURE_2D, tex[3]);
+    gl.uniform1i(programInfo.uniformLocations.tex3, 3);
+    gl.activeTexture(gl.TEXTURE4);
+    gl.bindTexture(gl.TEXTURE_2D, tex[4]);
+    gl.uniform1i(programInfo.uniformLocations.tex4, 4);
+    gl.activeTexture(gl.TEXTURE5);
+    gl.bindTexture(gl.TEXTURE_2D, tex[5]);
+    gl.uniform1i(programInfo.uniformLocations.tex5, 5);
+    gl.activeTexture(gl.TEXTURE6);
+    gl.bindTexture(gl.TEXTURE_2D, tex[6]);
+    gl.uniform1i(programInfo.uniformLocations.tex6, 6);
+    gl.activeTexture(gl.TEXTURE7);
+    gl.bindTexture(gl.TEXTURE_2D, tex[7]);
+    gl.uniform1i(programInfo.uniformLocations.tex7, 7);
+    gl.activeTexture(gl.TEXTURE8);
+    gl.bindTexture(gl.TEXTURE_2D, tex[8]);
+    gl.uniform1i(programInfo.uniformLocations.tex8, 8);
+    gl.activeTexture(gl.TEXTURE9);
+    gl.bindTexture(gl.TEXTURE_2D, tex[9]);
+    gl.uniform1i(programInfo.uniformLocations.tex9, 9);
 
     const offset = 0;
-    gl.drawElements(gl.TRIANGLES, numbers.length * 6, gl.UNSIGNED_SHORT, offset);
+    gl.drawElements(gl.TRIANGLES, (numbers.length + 2) * 6, gl.UNSIGNED_SHORT, offset);
 
 }
 
-let canvas, gl, programInfo, buffers;
+let canvas, gl, ctx, programInfo, buffers;
 
 function initGl() {
     canvas = document.getElementById('glcanvas');
+    tcanvas = document.getElementById('text');
     gl = canvas.getContext('webgl');
+    ctx = tcanvas.getContext('2d');
+    ctx.font = "12px Arial";
     if (!gl) {
         alert('Unable to initialize WebGL. Your browser or machine may not support it.');
         return null;
@@ -375,12 +441,44 @@ function initGl() {
 
       uniform sampler2D tex0;
       uniform sampler2D tex1;
+      uniform sampler2D tex2;
+      uniform sampler2D tex3;
+      uniform sampler2D tex4;
+      uniform sampler2D tex5;
+      uniform sampler2D tex6;
+      uniform sampler2D tex7;
+      uniform sampler2D tex8;
+      uniform sampler2D tex9;
 
       void main(void) {
         if (vTexIndex == 0.0) {
           gl_FragColor = texture2D(tex0, vTextureCoord);
         } else if (vTexIndex == 1.0) {
             gl_FragColor = texture2D(tex1, vTextureCoord);
+        }
+        else if (vTexIndex == 2.0) {
+            gl_FragColor = texture2D(tex2, vTextureCoord);
+        }
+        else if (vTexIndex == 3.0) {
+            gl_FragColor = texture2D(tex3, vTextureCoord);
+        }
+        else if (vTexIndex == 4.0) {
+            gl_FragColor = texture2D(tex4, vTextureCoord);
+        }
+        else if (vTexIndex == 5.0) {
+            gl_FragColor = texture2D(tex5, vTextureCoord);
+        }
+        else if (vTexIndex == 6.0) {
+            gl_FragColor = texture2D(tex6, vTextureCoord);
+        }
+        else if (vTexIndex == 7.0) {
+            gl_FragColor = texture2D(tex7, vTextureCoord);
+        }
+        else if (vTexIndex == 8.0) {
+            gl_FragColor = texture2D(tex8, vTextureCoord);
+        }
+        else if (vTexIndex == 9.0) {
+            gl_FragColor = texture2D(tex9, vTextureCoord);
         }
       }`;
 
@@ -398,18 +496,44 @@ function initGl() {
             modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
             tex0: gl.getUniformLocation(shaderProgram, 'tex0'),
             tex1: gl.getUniformLocation(shaderProgram, 'tex1'),
+            tex2: gl.getUniformLocation(shaderProgram, 'tex2'),
+            tex3: gl.getUniformLocation(shaderProgram, 'tex3'),
+            tex4: gl.getUniformLocation(shaderProgram, 'tex4'),
+            tex5: gl.getUniformLocation(shaderProgram, 'tex5'),
+            tex6: gl.getUniformLocation(shaderProgram, 'tex6'),
+            tex7: gl.getUniformLocation(shaderProgram, 'tex7'),
+            tex8: gl.getUniformLocation(shaderProgram, 'tex8'),
+            tex9: gl.getUniformLocation(shaderProgram, 'tex9'),
         },
     };
 
     tex = [];
-    tex[0] = loadTexture(gl, 'icons/numbers/zero_0.png');//'cubetexture.png');'
-    tex[1] = loadTexture(gl, 'icons/numbers/one_1.png');//'cubetexture.png');
+    tex[0] = loadTexture(gl, 'icons/0.png');
+    tex[1] = loadTexture(gl, 'icons/1.png');
+    tex[2] = loadTexture(gl, 'icons/slow.png');
+    tex[3] = loadTexture(gl, 'icons/thunder.png');
+    tex[4] = loadTexture(gl, 'icons/snow.png');
+    tex[5] = loadTexture(gl, 'icons/bomb.png');
+    tex[6] = loadTexture(gl, 'icons/strong.png');
+    tex[7] = loadTexture(gl, 'icons/pill.png');
+    tex[8] = loadTexture(gl, 'icons/avast_logo2.png');
+    tex[9] = loadTexture(gl, 'icons/chrome_logo.png');
 
     //console.log()
 }
 
-function render(numbers, boxes) {
+function render(numbers, boxes, hp, score, gameOver, size, psize) {
 
-    buffers = initBuffers(gl, numbers); // Vertices etc.
+    buffers = initBuffers(gl, numbers, boxes, size, psize); // Vertices etc.
     drawScene(gl, programInfo, buffers, tex, numbers);
+
+    const hpPos = [20, 20];
+    const scorePos = [430, 20];
+    const gameOverPos = [250, 250];
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillText(`HP: ${hp}`, hpPos[0], hpPos[1]);
+    ctx.fillText(`Score: ${score}`, scorePos[0], scorePos[1]);
+    if (gameOver) ctx.fillText("Game Over!\nClick to Restart", gameOverPos[0], gameOverPos[1]);
+
 }
